@@ -1,0 +1,3459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能安全靶场 - 靶标模型开发优化技能训练</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-bg: #f8f9fa;
+            --dark-bg: #343a40;
+            --border-color: #dee2e6;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        
+        .sidebar {
+            background-color: var(--secondary-color);
+            color: white;
+            min-height: 100vh;
+            padding: 0;
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar .sub-menu {
+            padding-left: 30px;
+            font-size: 0.9rem;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        .page-header {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            padding: 15px 20px;
+        }
+        
+        .training-step {
+            padding: 15px;
+            border-left: 3px solid var(--primary-color);
+            background-color: #f8fafc;
+            margin-bottom: 15px;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .step-number {
+            width: 30px;
+            height: 30px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 15px;
+        }
+        
+        .step-content {
+            padding-left: 45px;
+        }
+        
+        .param-row {
+            display: flex;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .param-label {
+            width: 150px;
+            font-weight: 500;
+        }
+        
+        .chart-container {
+            height: 300px;
+            width: 100%;
+        }
+        
+        .small-chart {
+            height: 250px;
+        }
+        
+        .log-container {
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+        
+        .log-info {
+            color: #569cd6;
+        }
+        
+        .log-warning {
+            color: #ffcc00;
+        }
+        
+        .log-error {
+            color: #f44747;
+        }
+        
+        .log-success {
+            color: #4ec9b0;
+        }
+        
+        .progress-container {
+            margin-top: 20px;
+        }
+        
+        .btn-action {
+            padding: 8px 15px;
+            font-size: 0.9rem;
+            margin-right: 10px;
+        }
+        
+        .training-visualization {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .visualization-item {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .result-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        .result-metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .result-metric:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-value {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .training-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .file-upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        
+        .file-upload-area.active {
+            border-color: var(--primary-color);
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+        
+        .file-list {
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .file-icon {
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+        
+        .upload-progress {
+            width: 100%;
+            height: 6px;
+            background-color: #e9ecef;
+            border-radius: 3px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        
+        .upload-progress-bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .model-card {
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .model-card:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+        
+        .model-card.selected {
+            border-color: var(--primary-color);
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+        
+        .model-icon {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-right: 15px;
+        }
+        
+        .model-info {
+            flex-grow: 1;
+        }
+        
+        .model-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .model-description {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .dataset-card {
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .dataset-card:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+        
+        .dataset-card.selected {
+            border-color: var(--primary-color);
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+        
+        .dataset-icon {
+            font-size: 2rem;
+            color: var(--success-color);
+            margin-right: 15px;
+        }
+        
+        .dataset-info {
+            flex-grow: 1;
+        }
+        
+        .dataset-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .dataset-stats {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .training-status {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .status-running {
+            background-color: var(--warning-color);
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-completed {
+            background-color: var(--success-color);
+        }
+        
+        .status-error {
+            background-color: var(--danger-color);
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .step-item {
+            text-align: center;
+            flex: 1;
+            position: relative;
+        }
+        
+        .step-item:not(:last-child):after {
+            content: '';
+            position: absolute;
+            top: 15px;
+            right: -50%;
+            width: 100%;
+            height: 2px;
+            background-color: var(--border-color);
+            z-index: 1;
+        }
+        
+        .step-item.active:not(:last-child):after {
+            background-color: var(--primary-color);
+        }
+        
+        .step-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: var(--border-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .step-item.active .step-circle {
+            background-color: var(--primary-color);
+        }
+        
+        .step-item.completed .step-circle {
+            background-color: var(--success-color);
+        }
+        
+        .step-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .step-item.active .step-label {
+            color: var(--primary-color);
+        }
+        
+        .step-item.completed .step-label {
+            color: var(--success-color);
+        }
+        
+        .training-step-content {
+            display: none;
+        }
+        
+        .training-step-content.active {
+            display: block;
+        }
+        
+        .btn-next-disabled {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+        
+        .btn-next-disabled:hover {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+        
+        .detailed-results {
+            margin-top: 20px;
+        }
+        
+        .chart-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .chart-col {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .model-performance-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .model-performance-table th,
+        .model-performance-table td {
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            text-align: center;
+        }
+        
+        .model-performance-table th {
+            background-color: var(--light-bg);
+            font-weight: 600;
+        }
+        
+        .model-performance-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .mode-explanation {
+            background-color: #f8f9fa;
+            border-left: 4px solid var(--primary-color);
+            padding: 10px 15px;
+            margin-top: 10px;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .code-editor {
+            height: 300px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            padding: 10px;
+            overflow: auto;
+            background-color: #f8f9fa;
+        }
+        
+        .optimization-metric {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .metric-bar {
+            flex-grow: 1;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            margin: 0 10px;
+            overflow: hidden;
+        }
+        
+        .metric-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 10px;
+            transition: width 0.5s;
+        }
+        
+        .metric-value {
+            min-width: 60px;
+            text-align: right;
+            font-weight: 600;
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .comparison-table th,
+        .comparison-table td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .comparison-table th {
+            background-color: var(--light-bg);
+            font-weight: 600;
+        }
+        
+        .improvement-positive {
+            color: var(--success-color);
+            font-weight: 600;
+        }
+        
+        .improvement-negative {
+            color: var(--danger-color);
+            font-weight: 600;
+        }
+        
+        .dataset-preview-btn {
+            margin-left: 10px;
+        }
+        
+        .preview-modal-image {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        
+        .preview-modal-text {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .tool-card {
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+        
+        .tool-card:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+        
+        .tool-icon {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-right: 15px;
+        }
+        
+        .tool-info {
+            flex-grow: 1;
+        }
+        
+        .tool-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .tool-description {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .weight-export-section {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .weight-format-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .weight-format-option input {
+            margin-right: 10px;
+        }
+        
+        .pagination {
+            justify-content: center;
+            margin-top: 15px;
+        }
+        
+        /* 数据集切分策略样式 */
+        .split-configuration {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .split-config-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .split-visualization {
+            display: flex;
+            height: 40px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .split-train {
+            background-color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .split-val {
+            background-color: var(--success-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .split-test {
+            background-color: var(--warning-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .split-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .split-control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .split-control-label {
+            width: 100px;
+            font-weight: 500;
+        }
+        
+        .split-control-input {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .split-control-slider {
+            flex: 1;
+        }
+        
+        .split-control-number {
+            width: 80px;
+        }
+        
+        .split-preview {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .split-preview-item {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .split-preview-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .split-preview-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .split-preview-count {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        
+        .split-advanced {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .split-advanced-toggle {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .split-advanced-content {
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .split-advanced-content.show {
+            display: block;
+        }
+        
+        .split-strategy-presets {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .split-preset-btn {
+            flex: 1;
+        }
+        
+        .split-validation {
+            color: var(--danger-color);
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .split-validation.show {
+            display: block;
+        }
+        
+        /* 样本数量配置样式 */
+        .sample-size-configuration {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .sample-size-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .sample-size-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .sample-size-control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .sample-size-control-label {
+            width: 120px;
+            font-weight: 500;
+        }
+        
+        .sample-size-control-input {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .sample-size-control-slider {
+            flex: 1;
+        }
+        
+        .sample-size-control-number {
+            width: 100px;
+        }
+        
+        .sample-size-quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .sample-size-quick-btn {
+            flex: 1;
+        }
+        
+        .sample-size-preview {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .sample-size-preview-item {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .sample-size-preview-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .sample-size-preview-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .sample-size-preview-percentage {
+            font-size: 0.9rem;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .sample-size-validation {
+            color: var(--danger-color);
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .sample-size-validation.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 侧边导航栏 -->
+            <div class="col-md-2 sidebar">
+                <div class="d-flex flex-column p-3">
+                    <h4 class="text-center mb-4">智能安全靶场</h4>
+                    <ul class="nav nav-pills flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#"><i class="fas fa-home me-2"></i>首页</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#"><i class="fas fa-book me-2"></i>学习中心</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#"><i class="fas fa-dumbbell me-2"></i>训练中心</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#"><i class="fas fa-play-circle me-2"></i>演练中心</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#"><i class="fas fa-chart-bar me-2"></i>评估中心</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#"><i class="fas fa-folder me-2"></i>资源中心</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- 主内容区域 -->
+            <div class="col-md-10 main-content">
+                <div class="page-header">
+                    <h2><i class="fas fa-tools me-2"></i>靶标模型开发优化技能训练</h2>
+                    <p class="text-muted">掌握靶标模型的开发与优化技巧，包括模型上传、代码编辑、参数配置和性能调优等高级技能</p>
+                </div>
+                
+                <!-- 步骤指示器 -->
+                <div class="step-indicator">
+                    <div class="step-item active" data-step="1">
+                        <div class="step-circle">1</div>
+                        <div class="step-label">选择模型</div>
+                    </div>
+                    <div class="step-item" data-step="2">
+                        <div class="step-circle">2</div>
+                        <div class="step-label">选择数据集</div>
+                    </div>
+                    <div class="step-item" data-step="3">
+                        <div class="step-circle">3</div>
+                        <div class="step-label">代码编辑</div>
+                    </div>
+                    <div class="step-item" data-step="4">
+                        <div class="step-circle">4</div>
+                        <div class="step-label">参数配置</div>
+                    </div>
+                    <div class="step-item" data-step="5">
+                        <div class="step-circle">5</div>
+                        <div class="step-label">执行训练</div>
+                    </div>
+                    <div class="step-item" data-step="6">
+                        <div class="step-circle">6</div>
+                        <div class="step-label">结果评估</div>
+                    </div>
+                    <div class="step-item" data-step="7">
+                        <div class="step-circle">7</div>
+                        <div class="step-label">模型发布</div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <!-- 训练步骤内容 -->
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span>模型开发优化流程</span>
+                                <div class="training-status">
+                                    <div class="status-indicator status-running"></div>
+                                    <span>训练进行中</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <!-- 步骤1: 模型选择 -->
+                                <div class="training-step-content active" id="step-1">
+                                    <h5>选择基础模型</h5>
+                                    <p class="text-muted">请选择要优化的基础模型</p>
+                                    
+                                    <div class="param-row">
+                                        <div class="param-label">模型类型:</div>
+                                        <div>
+                                            <select class="form-select" id="model-type" style="width: 300px;">
+                                                <option value="decision">决策式人工智能模型</option>
+                                                <option value="generative">生成式大模型</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="param-row">
+                                        <div class="param-label">具体模型:</div>
+                                        <div>
+                                            <div id="model-selection">
+                                                <!-- 模型卡片将通过JavaScript动态生成 -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="param-row">
+                                        <div class="param-label">优化目标:</div>
+                                        <div>
+                                            <select class="form-select" id="optimization-target" style="width: 300px;">
+                                                <option value="accuracy">提高准确率</option>
+                                                <option value="speed">提高推理速度</option>
+                                                <option value="robustness">提高鲁棒性</option>
+                                                <option value="efficiency">提高训练效率</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="training-controls">
+                                        <button class="btn btn-primary btn-action" onclick="nextStep(1)">下一步</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- 步骤2: 选择数据集 -->
+                                <div class="training-step-content" id="step-2">
+                                    <h5>选择数据集</h5>
+                                    <p class="text-muted">请选择用于模型优化的数据集</p>
+                                    
+                                    <div class="param-row">
+                                        <div class="param-label">数据集类型:</div>
+                                        <div>
+                                            <select class="form-select" id="dataset-type" style="width: 300px;">
+                                                <option value="predefined">预定义数据集</option>
+                                                <option value="custom">自定义数据集</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="param-row" id="predefined-dataset-section">
+                                        <div class="param-label">具体数据集:</div>
+                                        <div>
+                                            <div id="dataset-selection">
+                                                <!-- 数据集卡片将通过JavaScript动态生成 -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="param-row" id="custom-dataset-section" style="display: none;">
+                                        <div class="param-label">自定义数据集:</div>
+                                        <div>
+                                            <div class="file-upload-area" id="custom-dataset-upload">
+                                                <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2"></i>
+                                                <p>拖拽文件到此处或 <a href="#" id="browse-files">浏览文件</a></p>
+                                                <p class="text-muted small">支持格式: JPG, PNG, CSV, TXT, ZIP (单个文件不超过100MB)</p>
+                                                <input type="file" id="file-input" multiple accept=".jpg,.jpeg,.png,.csv,.txt,.zip" style="display: none;">
+                                            </div>
+                                            <div class="file-list" id="file-list"></div>
+                                            
+                                            <div class="mt-4">
+                                                <h6>数据格式化工具下载</h6>
+                                                <p class="text-muted">使用以下工具将您的数据格式化为系统支持的格式</p>
+                                                <div id="formatting-tools">
+                                                    <!-- 格式化工具将通过JavaScript动态生成 -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 样本数量配置 -->
+                                    <div class="sample-size-configuration" id="sample-size-config">
+                                        <div class="sample-size-header">
+                                            <h6>样本数量配置</h6>
+                                            <button class="btn btn-sm btn-outline-primary" id="reset-sample-size-btn">
+                                                <i class="fas fa-redo me-1"></i>重置为全部样本
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="sample-size-controls">
+                                            <div class="sample-size-control-group">
+                                                <div class="sample-size-control-label">样本数量:</div>
+                                                <div class="sample-size-control-input">
+                                                    <input type="range" class="form-range sample-size-control-slider" id="sample-size-slider" min="1000" max="60000" value="60000" step="1000">
+                                                    <input type="number" class="form-control sample-size-control-number" id="sample-size-input" min="1000" max="60000" value="60000">
+                                                    <span>样本</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="sample-size-quick-actions">
+                                            <button class="btn btn-outline-secondary sample-size-quick-btn" data-percentage="0.25">25%</button>
+                                            <button class="btn btn-outline-secondary sample-size-quick-btn" data-percentage="0.5">50%</button>
+                                            <button class="btn btn-outline-secondary sample-size-quick-btn" data-percentage="0.75">75%</button>
+                                            <button class="btn btn-outline-secondary sample-size-quick-btn" data-percentage="1">100%</button>
+                                        </div>
+                                        
+                                        <div class="sample-size-validation" id="sample-size-validation">
+                                            样本数量不能超过数据集总样本数
+                                        </div>
+                                        
+                                        <div class="sample-size-preview">
+                                            <div class="sample-size-preview-item">
+                                                <div class="sample-size-preview-value" id="sample-size-preview-value">60,000</div>
+                                                <div class="sample-size-preview-label">使用样本数</div>
+                                                <div class="sample-size-preview-percentage" id="sample-size-preview-percentage">100%</div>
+                                            </div>
+                                            <div class="sample-size-preview-item">
+                                                <div class="sample-size-preview-value" id="total-samples-value">60,000</div>
+                                                <div class="sample-size-preview-label">数据集总样本</div>
+                                            </div>
+                                            <div class="sample-size-preview-item">
+                                                <div class="sample-size-preview-value" id="remaining-samples-value">0</div>
+                                                <div class="sample-size-preview-label">剩余样本</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 数据集切分策略配置 -->
+                                    <div class="split-configuration" id="split-config">
+                                        <div class="split-config-header">
+                                            <h6>数据集切分策略</h6>
+                                            <button class="btn btn-sm btn-outline-primary" id="reset-split-btn">
+                                                <i class="fas fa-redo me-1"></i>重置为最优策略
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="split-visualization" id="split-visualization">
+                                            <div class="split-train" id="split-train" style="width: 70%;">训练集 70%</div>
+                                            <div class="split-val" id="split-val" style="width: 15%;">验证集 15%</div>
+                                            <div class="split-test" id="split-test" style="width: 15%;">测试集 15%</div>
+                                        </div>
+                                        
+                                        <div class="split-strategy-presets">
+                                            <button class="btn btn-outline-secondary split-preset-btn" data-train="70" data-val="15" data-test="15">最优策略 (70/15/15)</button>
+                                            <button class="btn btn-outline-secondary split-preset-btn" data-train="80" data-val="10" data-test="10">常用策略 (80/10/10)</button>
+                                            <button class="btn btn-outline-secondary split-preset-btn" data-train="60" data-val="20" data-test="20">平衡策略 (60/20/20)</button>
+                                        </div>
+                                        
+                                        <div class="split-controls">
+                                            <div class="split-control-group">
+                                                <div class="split-control-label">训练集:</div>
+                                                <div class="split-control-input">
+                                                    <input type="range" class="form-range split-control-slider" id="train-split-slider" min="50" max="90" value="70">
+                                                    <input type="number" class="form-control split-control-number" id="train-split-input" min="50" max="90" value="70">
+                                                    <span>%</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="split-control-group">
+                                                <div class="split-control-label">验证集:</div>
+                                                <div class="split-control-input">
+                                                    <input type="range" class="form-range split-control-slider" id="val-split-slider" min="5" max="30" value="15">
+                                                    <input type="number" class="form-control split-control-number" id="val-split-input" min="5" max="30" value="15">
+                                                    <span>%</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="split-control-group">
+                                                <div class="split-control-label">测试集:</div>
+                                                <div class="split-control-input">
+                                                    <input type="range" class="form-range split-control-slider" id="test-split-slider" min="5" max="30" value="15">
+                                                    <input type="number" class="form-control split-control-number" id="test-split-input" min="5" max="30" value="15">
+                                                    <span>%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="split-validation" id="split-validation">
+                                            比例总和必须为100%，当前总和为 <span id="split-total">100</span>%
+                                        </div>
+                                        
+                                        <div class="split-preview">
+                                            <div class="split-preview-item">
+                                                <div class="split-preview-value" id="train-preview-value">70%</div>
+                                                <div class="split-preview-label">训练集</div>
+                                                <div class="split-preview-count" id="train-preview-count">42,000 样本</div>
+                                            </div>
+                                            <div class="split-preview-item">
+                                                <div class="split-preview-value" id="val-preview-value">15%</div>
+                                                <div class="split-preview-label">验证集</div>
+                                                <div class="split-preview-count" id="val-preview-count">9,000 样本</div>
+                                            </div>
+                                            <div class="split-preview-item">
+                                                <div class="split-preview-value" id="test-preview-value">15%</div>
+                                                <div class="split-preview-label">测试集</div>
+                                                <div class="split-preview-count" id="test-preview-count">9,000 样本</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="split-advanced">
+                                            <div class="split-advanced-toggle" id="advanced-toggle">
+                                                <i class="fas fa-chevron-down me-2"></i>
+                                                高级配置
+                                            </div>
+                                            <div class="split-advanced-content" id="advanced-content">
+                                                <div class="param-row mt-3">
+                                                    <div class="param-label">随机种子:</div>
+                                                    <div>
+                                                        <input type="number" class="form-control" id="random-seed" value="42" style="width: 200px;">
+                                                        <small class="text-muted">用于确保数据切分的可重复性</small>
+                                                    </div>
+                                                </div>
+                                                <div class="param-row">
+                                                    <div class="param-label">分层采样:</div>
+                                                    <div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="stratified-sampling" checked>
+                                                            <label class="form-check-label" for="stratified-sampling">保持各类别比例一致</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="param-row">
+                                                    <div class="param-label">数据洗牌:</div>
+                                                    <div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="shuffle-data" checked>
+                                                            <label class="form-check-label" for="shuffle-data">随机打乱数据顺序</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="training-controls">
+                                        <button class="btn btn-secondary btn-action" onclick="prevStep(2)">上一步</button>
+                                        <button class="btn btn-primary btn-action" onclick="nextStep(2)">下一步</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- 步骤3: 代码编辑 -->
+                                <div class="training-step-content" id="step-3">
+                                    <h5>模型代码编辑</h5>
+                                    <p class="text-muted">编辑模型代码以实现性能优化，您可以修改网络结构、损失函数或优化算法</p>
+                                    
+                                    <div class="param-row">
+                                        <div class="param-label">代码文件:</div>
+                                        <div>
+                                            <select class="form-select" id="code-file" style="width: 300px;">
+                                                <option value="model-arch">模型架构 (model_arch.py)</option>
+                                                <option value="training-loop">训练循环 (train.py)</option>
+                                                <option value="loss-function">损失函数 (loss.py)</option>
+                                                <option value="optimizer">优化器 (optimizer.py)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="param-row">
+                                        <div class="param-label">代码编辑器:</div>
+                                        <div>
+                                            <div class="code-editor" id="code-editor" contenteditable="true">
+# ResNet-50模型优化代码
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms, models
+
+# 定义优化后的ResNet模型
+class OptimizedResNet(nn.Module):
+    def __init__(self, num_classes=10):
+        super(OptimizedResNet, self).__init__()
+        # 使用预训练的ResNet-50作为基础模型
+        self.resnet = models.resnet50(pretrained=True)
+        
+        # 修改最后一层全连接层以适应CIFAR-10的10个类别
+        num_features = self.resnet.fc.in_features
+        self.resnet.fc = nn.Sequential(
+            nn.Dropout(0.5),  # 增加Dropout防止过拟合
+            nn.Linear(num_features, 512),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.3),
+            nn.Linear(512, num_classes)
+        )
+        
+    def forward(self, x):
+        return self.resnet(x)
+
+# 优化函数 - 使用AdamW优化器
+def get_optimizer(model, lr=0.001, weight_decay=0.01):
+    return optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+
+# 学习率调度器
+def get_scheduler(optimizer, step_size=10, gamma=0.1):
+    return optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
+
+# 训练函数
+def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs=50):
+    best_acc = 0.0
+    
+    for epoch in range(num_epochs):
+        # 训练阶段
+        model.train()
+        running_loss = 0.0
+        running_corrects = 0
+        
+        for inputs, labels in train_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            
+            optimizer.zero_grad()
+            
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            
+            loss.backward()
+            optimizer.step()
+            
+            _, preds = torch.max(outputs, 1)
+            running_loss += loss.item() * inputs.size(0)
+            running_corrects += torch.sum(preds == labels.data)
+        
+        epoch_loss = running_loss / len(train_loader.dataset)
+        epoch_acc = running_corrects.double() / len(train_loader.dataset)
+        
+        # 验证阶段
+        model.eval()
+        val_loss = 0.0
+        val_corrects = 0
+        
+        with torch.no_grad():
+            for inputs, labels in val_loader:
+                inputs, labels = inputs.to(device), labels.to(device)
+                
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                
+                _, preds = torch.max(outputs, 1)
+                val_loss += loss.item() * inputs.size(0)
+                val_corrects += torch.sum(preds == labels.data)
+        
+        val_loss = val_loss / len(val_loader.dataset)
+        val_acc = val_corrects.double() / len(val_loader.dataset)
+        
+        # 更新学习率
+        scheduler.step()
+        
+        # 保存最佳模型
+        if val_acc > best_acc:
+            best_acc = val_acc
+            torch.save(model.state_dict(), 'best_model.pth')
+        
+        print(f'Epoch {epoch+1}/{num_epochs}, Train Loss: {epoch_loss:.4f}, Train Acc: {epoch_acc:.4f}, '
+              f'Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}')
+    
+    return model
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="training-controls">
+                                        <button class="btn btn-secondary btn-action" onclick="prevStep(3)">上一步</button>
+                                        <button class="btn btn-outline-primary btn-action" onclick="testCode()">测试代码</button>
+                                        <button class="btn btn-primary btn-action" onclick="nextStep(3)">保存并继续</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- 步骤4: 参数配置 -->
+                                <div class="training-step-content" id="step-4">
+                                    <h5>优化参数配置</h5>
+                                    <p class="text-muted">请配置训练和优化参数</p>
+                                    
+                                    <div class="param-row">
+                                        <div class="param-label">优化策略:</div>
+                                        <div>
+                                            <select class="form-select" id="optimization-strategy" style="width: 300px;">
+                                                <option value="architecture">网络架构优化</option>
+                                                <option value="hyperparameter">超参数调优</option>
+                                                <option value="regularization">正则化优化</option>
+                                                <option value="ensemble">集成学习</option>
+                                            </select>
+                                            <div class="mode-explanation">
+                                                <strong>网络架构优化</strong>: 修改网络结构，如增加/减少层数、改变连接方式等<br>
+                                                <strong>超参数调优</strong>: 调整学习率、批大小等超参数<br>
+                                                <strong>正则化优化</strong>: 使用Dropout、权重衰减等技术防止过拟合<br>
+                                                <strong>集成学习</strong>: 结合多个模型提升性能
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="param-row">
+                                        <div class="param-label">学习率:</div>
+                                        <div>
+                                            <input type="text" class="form-control" id="learning-rate" value="0.001" style="width: 200px;">
+                                            <small class="text-muted">默认值: 0.001, 范围: 0.0001-0.1</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="param-row">
+                                        <div class="param-label">训练轮数:</div>
+                                        <div>
+                                            <input type="number" class="form-control" id="epochs" value="50" style="width: 200px;">
+                                            <small class="text-muted">默认值: 50, 范围: 10-200</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="param-row">
+                                        <div class="param-label">批处理大小:</div>
+                                        <div>
+                                            <input type="number" class="form-control" id="batch-size" value="32" style="width: 200px;">
+                                            <small class="text-muted">默认值: 32, 范围: 16-128</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="param-row">
+                                        <div class="param-label">优化器:</div>
+                                        <div>
+                                            <select class="form-select" id="optimizer" style="width: 200px;">
+                                                <option value="adam">Adam</option>
+                                                <option value="sgd">SGD</option>
+                                                <option value="rmsprop">RMSprop</option>
+                                                <option value="adamw" selected>AdamW</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="param-row">
+                                        <div class="param-label">正则化强度:</div>
+                                        <div>
+                                            <input type="range" class="form-range" id="regularization-strength" min="0" max="1" step="0.1" value="0.5">
+                                            <small class="text-muted">值: <span id="regularization-value">0.5</span></small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="training-controls">
+                                        <button class="btn btn-secondary btn-action" onclick="prevStep(4)">上一步</button>
+                                        <button class="btn btn-primary btn-action" onclick="nextStep(4)">下一步</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- 步骤5: 执行训练 -->
+                                <div class="training-step-content" id="step-5">
+                                    <h5>执行优化训练</h5>
+                                    <p class="text-muted">开始模型优化训练过程</p>
+                                    
+                                    <div class="param-row">
+                                        <div class="param-label">计算资源:</div>
+                                        <div>
+                                            <select class="form-select" id="compute-resource" style="width: 200px;">
+                                                <option value="cpu">CPU训练</option>
+                                                <option value="gpu-single" selected>GPU训练 (单卡)</option>
+                                                <option value="gpu-multi">GPU训练 (多卡)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="param-row">
+                                        <div class="param-label">最大训练时间:</div>
+                                        <div>
+                                            <input type="number" class="form-control" id="max-training-time" value="60" style="width: 200px;">
+                                            <small class="text-muted">单位: 分钟</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="progress-container">
+                                        <div class="d-flex justify-content-between">
+                                            <span>优化训练进度</span>
+                                            <span id="training-progress-text">0%</span>
+                                        </div>
+                                        <div class="progress">
+                                            <div class="progress-bar" id="training-progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="training-controls">
+                                        <button class="btn btn-secondary btn-action" onclick="prevStep(5)">上一步</button>
+                                        <button class="btn btn-primary btn-action" id="start-training-btn" onclick="startTraining()">开始优化训练</button>
+                                        <button class="btn btn-warning btn-action" id="pause-training-btn" style="display: none;" onclick="pauseTraining()">暂停训练</button>
+                                        <button class="btn btn-danger btn-action" id="stop-training-btn" style="display: none;" onclick="stopTraining()">停止训练</button>
+                                        <button class="btn btn-primary btn-action btn-next-disabled" id="next-step-btn" onclick="nextStep(5)" disabled>下一步</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- 步骤6: 结果评估 -->
+                                <div class="training-step-content" id="step-6">
+                                    <h5>优化结果评估</h5>
+                                    <p class="text-muted">查看优化前后的性能对比</p>
+                                    
+                                    <div class="result-card">
+                                        <h6>优化效果对比</h6>
+                                        <table class="comparison-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>性能指标</th>
+                                                    <th>优化前</th>
+                                                    <th>优化后</th>
+                                                    <th>提升幅度</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>准确率</td>
+                                                    <td>80.2%</td>
+                                                    <td>92.5%</td>
+                                                    <td class="improvement-positive">+12.3%</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>推理速度 (FPS)</td>
+                                                    <td>45</td>
+                                                    <td>68</td>
+                                                    <td class="improvement-positive">+23 FPS</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>模型大小 (MB)</td>
+                                                    <td>256</td>
+                                                    <td>198</td>
+                                                    <td class="improvement-positive">-58 MB</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>对抗鲁棒性</td>
+                                                    <td>62%</td>
+                                                    <td>78%</td>
+                                                    <td class="improvement-positive">+16%</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>训练时间 (分钟)</td>
+                                                    <td>65</td>
+                                                    <td>45</td>
+                                                    <td class="improvement-positive">-20分钟</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <div class="training-visualization">
+                                        <div class="visualization-item">
+                                            <h6>准确率对比</h6>
+                                            <div class="chart-container" id="accuracy-comparison-chart"></div>
+                                        </div>
+                                        <div class="visualization-item">
+                                            <h6>损失函数对比</h6>
+                                            <div class="chart-container" id="loss-comparison-chart"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="detailed-results">
+                                        <h6>优化效果详细分析</h6>
+                                        
+                                        <div class="chart-row">
+                                            <div class="chart-col">
+                                                <h6>优化前后混淆矩阵对比</h6>
+                                                <div class="chart-container small-chart" id="confusion-matrix-chart"></div>
+                                            </div>
+                                            <div class="chart-col">
+                                                <h6>各类别性能提升</h6>
+                                                <div class="chart-container small-chart" id="category-improvement-chart"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="optimization-metrics">
+                                            <h6>优化指标详情</h6>
+                                            <div class="optimization-metric">
+                                                <span>准确率提升:</span>
+                                                <div class="metric-bar">
+                                                    <div class="metric-fill" style="width: 85%"></div>
+                                                </div>
+                                                <span class="metric-value improvement-positive">+12.3%</span>
+                                            </div>
+                                            <div class="optimization-metric">
+                                                <span>推理速度提升:</span>
+                                                <div class="metric-bar">
+                                                    <div class="metric-fill" style="width: 65%"></div>
+                                                </div>
+                                                <span class="metric-value improvement-positive">+51.1%</span>
+                                            </div>
+                                            <div class="optimization-metric">
+                                                <span>模型压缩率:</span>
+                                                <div class="metric-bar">
+                                                    <div class="metric-fill" style="width: 45%"></div>
+                                                </div>
+                                                <span class="metric-value improvement-positive">-22.7%</span>
+                                            </div>
+                                            <div class="optimization-metric">
+                                                <span>鲁棒性提升:</span>
+                                                <div class="metric-bar">
+                                                    <div class="metric-fill" style="width: 70%"></div>
+                                                </div>
+                                                <span class="metric-value improvement-positive">+25.8%</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="training-controls">
+                                            <button class="btn btn-secondary btn-action" onclick="prevStep(6)">上一步</button>
+                                            <button class="btn btn-primary btn-action" onclick="nextStep(6)">下一步</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 步骤7: 模型发布 -->
+                                <div class="training-step-content" id="step-7">
+                                    <h5>模型发布</h5>
+                                    <p class="text-muted">发布优化完成的模型</p>
+                                    
+                                    <div class="param-row">
+                                        <div class="param-label">发布位置:</div>
+                                        <div>
+                                            <select class="form-select" id="publish-location" style="width: 300px;">
+                                                <option value="personal" selected>个人资源中心</option>
+                                                <option value="class">班级共享资源</option>
+                                                <option value="school">全校资源库</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="param-row">
+                                        <div class="param-label">模型名称:</div>
+                                        <div>
+                                            <input type="text" class="form-control" id="model-name" value="优化后的ResNet_CIFAR10_分类模型" style="width: 300px;">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="param-row">
+                                        <div class="param-label">模型描述:</div>
+                                        <div>
+                                            <textarea class="form-control" id="model-description" rows="3" style="width: 100%;">基于ResNet模型在CIFAR-10数据集上优化的图像分类模型，通过架构调整和参数优化，准确率从80.2%提升到92.5%</textarea>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="param-row">
+                                        <div class="param-label">标签:</div>
+                                        <div>
+                                            <input type="text" class="form-control" id="model-tags" value="ResNet, CIFAR-10, 图像分类, 优化模型" style="width: 100%;">
+                                            <small class="text-muted">使用逗号分隔多个标签</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="weight-export-section">
+                                        <h6>模型权重导出</h6>
+                                        <p class="text-muted">导出优化完成的模型权重文件</p>
+                                        
+                                        <div class="param-row">
+                                            <div class="param-label">导出格式:</div>
+                                            <div>
+                                                <div class="weight-format-option">
+                                                    <input type="radio" id="format-pytorch" name="weight-format" value="pytorch" checked>
+                                                    <label for="format-pytorch">PyTorch (.pth)</label>
+                                                </div>
+                                                <div class="weight-format-option">
+                                                    <input type="radio" id="format-tensorflow" name="weight-format" value="tensorflow">
+                                                    <label for="format-tensorflow">TensorFlow (.h5)</label>
+                                                </div>
+                                                <div class="weight-format-option">
+                                                    <input type="radio" id="format-onnx" name="weight-format" value="onnx">
+                                                    <label for="format-onnx">ONNX (.onnx)</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="param-row">
+                                            <div class="param-label">包含内容:</div>
+                                            <div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="include-weights" checked>
+                                                    <label class="form-check-label" for="include-weights">模型权重</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="include-architecture" checked>
+                                                    <label class="form-check-label" for="include-architecture">模型架构</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="include-optimizer">
+                                                    <label class="form-check-label" for="include-optimizer">优化器状态</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="training-controls">
+                                            <button class="btn btn-success btn-action" onclick="exportModelWeights()">
+                                                <i class="fas fa-download me-2"></i>导出模型权重
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="training-controls">
+                                        <button class="btn btn-secondary btn-action" onclick="prevStep(7)">上一步</button>
+                                        <button class="btn btn-success btn-action" onclick="publishModel()">发布模型</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 训练日志和可视化 -->
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">优化训练日志</div>
+                            <div class="card-body">
+                                <div class="log-container" id="training-log">
+                                    <!-- 日志将通过JavaScript动态生成 -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-4">
+                            <div class="card-header">实时性能监控</div>
+                            <div class="card-body">
+                                <div class="chart-container" id="realtime-chart"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-4">
+                            <div class="card-header">优化建议</div>
+                            <div class="card-body">
+                                <div id="optimization-suggestions">
+                                    <!-- 优化建议将通过JavaScript动态生成 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据集预览模态框 -->
+    <div class="modal fade" id="datasetPreviewModal" tabindex="-1" aria-labelledby="datasetPreviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="datasetPreviewModalLabel">数据集预览</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="preview-content">
+                        <!-- 预览内容将通过JavaScript动态生成 -->
+                    </div>
+                    <nav aria-label="数据集预览分页">
+                        <ul class="pagination" id="preview-pagination">
+                            <!-- 分页将通过JavaScript动态生成 -->
+                        </ul>
+                    </nav>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 当前步骤
+        let currentStep = 1;
+        let trainingInterval = null;
+        let trainingProgress = 0;
+        let isTraining = false;
+        let currentPreviewDataset = null;
+        let currentPreviewPage = 1;
+        const itemsPerPage = 5;
+        
+        // 初始化模型数据
+        const models = {
+            decision: [
+                { id: 1, name: "VGG", description: "深度卷积神经网络，适用于图像分类任务", icon: "fas fa-network-wired" },
+                { id: 2, name: "ResNet", description: "残差网络，解决深度网络训练难题", icon: "fas fa-project-diagram" },
+                { id: 3, name: "Inception", description: "多尺度特征提取网络", icon: "fas fa-sitemap" },
+                { id: 4, name: "YOLO", description: "实时目标检测算法", icon: "fas fa-bullseye" },
+                { id: 5, name: "Faster RCNN", description: "快速区域卷积神经网络", icon: "fas fa-object-group" }
+            ],
+            generative: [
+                { id: 6, name: "Qwen2-instruct7B", description: "轻量化大语言模型", icon: "fas fa-comment" },
+                { id: 7, name: "ChatGLM36B", description: "中英双语对话模型", icon: "fas fa-language" },
+                { id: 8, name: "SecGPT", description: "安全领域专用大模型", icon: "fas fa-shield-alt" }
+            ]
+        };
+        
+        // 初始化数据集数据
+        const datasets = [
+            { 
+                id: 1, 
+                name: "CIFAR-10", 
+                description: "10类物体图像数据集", 
+                samples: 60000, 
+                type: "图像", 
+                icon: "fas fa-images",
+                previewData: generateImagePreviewData(10, "CIFAR-10")
+            },
+            { 
+                id: 2, 
+                name: "MNIST", 
+                description: "手写数字数据集", 
+                samples: 70000, 
+                type: "图像", 
+                icon: "fas fa-file-image",
+                previewData: generateImagePreviewData(10, "MNIST")
+            },
+            { 
+                id: 3, 
+                name: "ImageNet", 
+                description: "大规模图像识别数据集", 
+                samples: 1400000, 
+                type: "图像", 
+                icon: "fas fa-database",
+                previewData: generateImagePreviewData(10, "ImageNet")
+            },
+            { 
+                id: 4, 
+                name: "COCO", 
+                description: "通用物体检测数据集", 
+                samples: 330000, 
+                type: "图像", 
+                icon: "fas fa-shapes",
+                previewData: generateImagePreviewData(10, "COCO")
+            },
+            { 
+                id: 5, 
+                name: "LFW", 
+                description: "人脸识别数据集", 
+                samples: 13000, 
+                type: "图像", 
+                icon: "fas fa-user",
+                previewData: generateImagePreviewData(10, "LFW")
+            },
+            { 
+                id: 6, 
+                name: "IMDB", 
+                description: "电影评论情感分析数据集", 
+                samples: 50000, 
+                type: "文本", 
+                icon: "fas fa-film",
+                previewData: generateTextPreviewData(10, "IMDB")
+            }
+        ];
+        
+        // 初始化格式化工具数据
+        const formattingTools = [
+            {
+                id: 1,
+                name: "图像数据格式化工具",
+                description: "将各种格式的图像数据转换为系统支持的统一格式",
+                version: "1.2.0",
+                fileSize: "15.2 MB",
+                downloadUrl: "#",
+                icon: "fas fa-image"
+            },
+            {
+                id: 2,
+                name: "文本数据预处理工具",
+                description: "对文本数据进行清洗、分词和向量化处理",
+                version: "2.1.0",
+                fileSize: "8.7 MB",
+                downloadUrl: "#",
+                icon: "fas fa-file-alt"
+            },
+            {
+                id: 3,
+                name: "CSV数据转换器",
+                description: "将CSV格式数据转换为模型训练所需的格式",
+                version: "1.0.5",
+                fileSize: "5.3 MB",
+                downloadUrl: "#",
+                icon: "fas fa-table"
+            },
+            {
+                id: 4,
+                name: "音频数据处理工具",
+                description: "处理音频数据，提取特征并转换为模型输入格式",
+                version: "1.5.2",
+                fileSize: "22.1 MB",
+                downloadUrl: "#",
+                icon: "fas fa-music"
+            }
+        ];
+        
+        // 初始化优化建议
+        const optimizationSuggestions = [
+            "建议增加Dropout层以防止过拟合",
+            "尝试使用AdamW优化器替代Adam，通常有更好的泛化性能",
+            "考虑使用学习率预热策略，提高训练稳定性",
+            "可以尝试模型剪枝技术减少模型大小",
+            "建议使用数据增强技术提高模型鲁棒性",
+            "尝试使用标签平滑技术提高模型校准度"
+        ];
+        
+        // 初始化日志数据
+        const trainingLogs = [
+            { time: "10:00:01", type: "info", message: "模型优化训练任务开始初始化" },
+            { time: "10:00:05", type: "info", message: "加载基础模型: ResNet-50" },
+            { time: "10:00:10", type: "info", message: "选择数据集: CIFAR-10" },
+            { time: "10:00:15", type: "info", message: "应用优化代码修改" },
+            { time: "10:00:20", type: "info", message: "优化参数配置完成" },
+            { time: "10:00:25", type: "info", message: "开始模型优化训练" }
+        ];
+        
+        // 初始化图表
+        let accuracyComparisonChart, lossComparisonChart, realtimeChart, confusionMatrixChart, categoryImprovementChart;
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化模型选择
+            renderModelSelection();
+            
+            // 初始化数据集选择
+            renderDatasetSelection();
+            
+            // 初始化格式化工具
+            renderFormattingTools();
+            
+            // 初始化训练日志
+            renderTrainingLog();
+            
+            // 初始化优化建议
+            renderOptimizationSuggestions();
+            
+            // 初始化图表
+            initCharts();
+            
+            // 数据集类型切换事件
+            document.getElementById('dataset-type').addEventListener('change', function() {
+                if (this.value === 'custom') {
+                    document.getElementById('predefined-dataset-section').style.display = 'none';
+                    document.getElementById('custom-dataset-section').style.display = 'flex';
+                    // 对于自定义数据集，隐藏样本数量配置和数据集切分策略
+                    document.getElementById('sample-size-config').style.display = 'none';
+                    document.getElementById('split-config').style.display = 'none';
+                } else {
+                    document.getElementById('predefined-dataset-section').style.display = 'flex';
+                    document.getElementById('custom-dataset-section').style.display = 'none';
+                    // 对于预定义数据集，显示样本数量配置和数据集切分策略
+                    document.getElementById('sample-size-config').style.display = 'block';
+                    document.getElementById('split-config').style.display = 'block';
+                }
+            });
+            
+            // 模型类型切换事件
+            document.getElementById('model-type').addEventListener('change', function() {
+                renderModelSelection();
+            });
+            
+            // 优化策略切换事件
+            document.getElementById('optimization-strategy').addEventListener('change', function() {
+                updateOptimizationExplanation(this.value);
+            });
+            
+            // 正则化强度滑块事件
+            document.getElementById('regularization-strength').addEventListener('input', function() {
+                document.getElementById('regularization-value').textContent = this.value;
+            });
+            
+            // 代码文件切换事件
+            document.getElementById('code-file').addEventListener('change', function() {
+                updateCodeEditor(this.value);
+            });
+            
+            // 文件上传功能
+            setupFileUpload();
+            
+            // 初始化性能表格
+            renderPerformanceTable();
+            
+            // 初始化数据集切分策略
+            initDatasetSplit();
+            
+            // 初始化样本数量配置
+            initSampleSizeConfig();
+        });
+        
+        // 初始化样本数量配置
+        function initSampleSizeConfig() {
+            // 获取DOM元素
+            const sampleSizeSlider = document.getElementById('sample-size-slider');
+            const sampleSizeInput = document.getElementById('sample-size-input');
+            const resetBtn = document.getElementById('reset-sample-size-btn');
+            const quickBtns = document.querySelectorAll('.sample-size-quick-btn');
+            
+            // 当前选中的数据集
+            let currentDataset = null;
+            
+            // 更新样本数量预览
+            function updateSampleSizePreview() {
+                const sampleSizeValue = parseInt(sampleSizeInput.value);
+                
+                // 更新预览值
+                document.getElementById('sample-size-preview-value').textContent = sampleSizeValue.toLocaleString();
+                
+                // 更新百分比
+                if (currentDataset) {
+                    const percentage = (sampleSizeValue / currentDataset.samples * 100).toFixed(1);
+                    document.getElementById('sample-size-preview-percentage').textContent = percentage + '%';
+                    
+                    // 更新总样本数
+                    document.getElementById('total-samples-value').textContent = currentDataset.samples.toLocaleString();
+                    
+                    // 更新剩余样本数
+                    const remaining = currentDataset.samples - sampleSizeValue;
+                    document.getElementById('remaining-samples-value').textContent = remaining.toLocaleString();
+                    
+                    // 验证样本数量
+                    if (sampleSizeValue > currentDataset.samples) {
+                        document.getElementById('sample-size-validation').classList.add('show');
+                        sampleSizeInput.classList.add('is-invalid');
+                        sampleSizeSlider.classList.add('is-invalid');
+                    } else {
+                        document.getElementById('sample-size-validation').classList.remove('show');
+                        sampleSizeInput.classList.remove('is-invalid');
+                        sampleSizeSlider.classList.remove('is-invalid');
+                    }
+                }
+                
+                // 更新数据集切分预览
+                updateSplitVisualization();
+            }
+            
+            // 同步滑块和输入框
+            function syncSampleSizeControls() {
+                sampleSizeInput.value = sampleSizeSlider.value;
+                updateSampleSizePreview();
+            }
+            
+            // 绑定事件
+            sampleSizeSlider.addEventListener('input', syncSampleSizeControls);
+            sampleSizeInput.addEventListener('input', function() {
+                sampleSizeSlider.value = this.value;
+                updateSampleSizePreview();
+            });
+            
+            // 重置按钮事件
+            resetBtn.addEventListener('click', function() {
+                if (currentDataset) {
+                    setSampleSizeValue(currentDataset.samples);
+                    updateSampleSizePreview();
+                }
+            });
+            
+            // 快速选择按钮事件
+            quickBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (currentDataset) {
+                        const percentage = parseFloat(this.getAttribute('data-percentage'));
+                        const sampleSize = Math.floor(currentDataset.samples * percentage);
+                        setSampleSizeValue(sampleSize);
+                        updateSampleSizePreview();
+                    }
+                });
+            });
+            
+            // 设置样本数量值
+            function setSampleSizeValue(value) {
+                sampleSizeSlider.value = value;
+                sampleSizeInput.value = value;
+            }
+            
+            // 更新当前选中的数据集
+            function updateCurrentDataset(dataset) {
+                currentDataset = dataset;
+                if (dataset) {
+                    // 更新滑块的最大值
+                    sampleSizeSlider.max = dataset.samples;
+                    sampleSizeInput.max = dataset.samples;
+                    
+                    // 重置为全部样本
+                    setSampleSizeValue(dataset.samples);
+                    updateSampleSizePreview();
+                }
+            }
+            
+            // 暴露更新函数供外部调用
+            window.updateCurrentDataset = updateCurrentDataset;
+            
+            // 获取当前样本数量
+            function getCurrentSampleSize() {
+                return parseInt(sampleSizeInput.value);
+            }
+            
+            // 暴露获取函数供外部调用
+            window.getCurrentSampleSize = getCurrentSampleSize;
+            
+            // 初始化预览
+            updateSampleSizePreview();
+        }
+        
+        // 初始化数据集切分策略
+        function initDatasetSplit() {
+            // 获取DOM元素
+            const trainSlider = document.getElementById('train-split-slider');
+            const trainInput = document.getElementById('train-split-input');
+            const valSlider = document.getElementById('val-split-slider');
+            const valInput = document.getElementById('val-split-input');
+            const testSlider = document.getElementById('test-split-slider');
+            const testInput = document.getElementById('test-split-input');
+            const resetBtn = document.getElementById('reset-split-btn');
+            const presetBtns = document.querySelectorAll('.split-preset-btn');
+            const advancedToggle = document.getElementById('advanced-toggle');
+            const advancedContent = document.getElementById('advanced-content');
+            
+            // 更新切分可视化
+            function updateSplitVisualization() {
+                const trainValue = parseInt(trainInput.value);
+                const valValue = parseInt(valInput.value);
+                const testValue = parseInt(testInput.value);
+                
+                // 更新可视化
+                document.getElementById('split-train').style.width = trainValue + '%';
+                document.getElementById('split-val').style.width = valValue + '%';
+                document.getElementById('split-test').style.width = testValue + '%';
+                
+                // 更新预览值
+                document.getElementById('train-preview-value').textContent = trainValue + '%';
+                document.getElementById('val-preview-value').textContent = valValue + '%';
+                document.getElementById('test-preview-value').textContent = testValue + '%';
+                
+                // 更新样本数量预览
+                const sampleSize = window.getCurrentSampleSize ? window.getCurrentSampleSize() : 60000;
+                
+                document.getElementById('train-preview-count').textContent = Math.round(sampleSize * trainValue / 100).toLocaleString() + ' 样本';
+                document.getElementById('val-preview-count').textContent = Math.round(sampleSize * valValue / 100).toLocaleString() + ' 样本';
+                document.getElementById('test-preview-count').textContent = Math.round(sampleSize * testValue / 100).toLocaleString() + ' 样本';
+                
+                // 验证比例总和
+                const total = trainValue + valValue + testValue;
+                document.getElementById('split-total').textContent = total;
+                
+                if (total !== 100) {
+                    document.getElementById('split-validation').classList.add('show');
+                } else {
+                    document.getElementById('split-validation').classList.remove('show');
+                }
+            }
+            
+            // 同步滑块和输入框
+            function syncTrainControls() {
+                trainInput.value = trainSlider.value;
+                updateSplitVisualization();
+            }
+            
+            function syncValControls() {
+                valInput.value = valSlider.value;
+                updateSplitVisualization();
+            }
+            
+            function syncTestControls() {
+                testInput.value = testSlider.value;
+                updateSplitVisualization();
+            }
+            
+            // 绑定事件
+            trainSlider.addEventListener('input', syncTrainControls);
+            trainInput.addEventListener('input', function() {
+                trainSlider.value = this.value;
+                updateSplitVisualization();
+            });
+            
+            valSlider.addEventListener('input', syncValControls);
+            valInput.addEventListener('input', function() {
+                valSlider.value = this.value;
+                updateSplitVisualization();
+            });
+            
+            testSlider.addEventListener('input', syncTestControls);
+            testInput.addEventListener('input', function() {
+                testSlider.value = this.value;
+                updateSplitVisualization();
+            });
+            
+            // 重置按钮事件
+            resetBtn.addEventListener('click', function() {
+                setSplitValues(70, 15, 15);
+                updateSplitVisualization();
+            });
+            
+            // 预设按钮事件
+            presetBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const train = parseInt(this.getAttribute('data-train'));
+                    const val = parseInt(this.getAttribute('data-val'));
+                    const test = parseInt(this.getAttribute('data-test'));
+                    setSplitValues(train, val, test);
+                    updateSplitVisualization();
+                });
+            });
+            
+            // 高级配置切换
+            advancedToggle.addEventListener('click', function() {
+                const isExpanded = advancedContent.classList.contains('show');
+                if (isExpanded) {
+                    advancedContent.classList.remove('show');
+                    this.innerHTML = '<i class="fas fa-chevron-down me-2"></i>高级配置';
+                } else {
+                    advancedContent.classList.add('show');
+                    this.innerHTML = '<i class="fas fa-chevron-up me-2"></i>高级配置';
+                }
+            });
+            
+            // 设置切分值
+            function setSplitValues(train, val, test) {
+                trainSlider.value = train;
+                trainInput.value = train;
+                valSlider.value = val;
+                valInput.value = val;
+                testSlider.value = test;
+                testInput.value = test;
+            }
+            
+            // 初始化可视化
+            updateSplitVisualization();
+        }
+        
+        // 生成图像预览数据
+        function generateImagePreviewData(count, datasetName) {
+            const previewData = [];
+            for (let i = 1; i <= count; i++) {
+                previewData.push({
+                    id: i,
+                    type: 'image',
+                    title: `${datasetName} 样本 ${i}`,
+                    // 使用占位图片URL，实际应用中可以使用真实图片URL
+                    url: `https://picsum.photos/300/200?random=${i}`,
+                    description: `这是${datasetName}数据集的第${i}个样本，展示了数据集的典型特征。`
+                });
+            }
+            return previewData;
+        }
+        
+        // 生成文本预览数据
+        function generateTextPreviewData(count, datasetName) {
+            const previewData = [];
+            const sampleTexts = [
+                "这部电影非常精彩，演员表演出色，剧情紧凑，值得一看。",
+                "产品质量很好，包装精美，物流速度快，非常满意。",
+                "这个餐厅的环境优雅，菜品美味，服务周到，强烈推荐。",
+                "这本书内容丰富，观点独特，阅读后受益匪浅。",
+                "这款软件功能强大，界面友好，使用起来非常方便。",
+                "这次旅行体验很棒，景点美丽，导游专业，物超所值。",
+                "这个课程讲解清晰，内容实用，对工作有很大帮助。",
+                "这款手机性能出色，拍照效果好，电池续航能力强。",
+                "这家酒店位置便利，设施齐全，住宿体验舒适。",
+                "这个应用程序设计精美，操作简单，功能丰富。"
+            ];
+            
+            for (let i = 1; i <= count; i++) {
+                previewData.push({
+                    id: i,
+                    type: 'text',
+                    title: `${datasetName} 样本 ${i}`,
+                    content: sampleTexts[i-1] || `这是${datasetName}数据集的第${i}个文本样本。`,
+                    description: `这是${datasetName}数据集的第${i}个文本样本，展示了数据集的典型特征。`
+                });
+            }
+            return previewData;
+        }
+        
+        // 更新优化策略说明
+        function updateOptimizationExplanation(strategy) {
+            const explanation = document.querySelector('.mode-explanation');
+            switch(strategy) {
+                case 'architecture':
+                    explanation.innerHTML = '<strong>网络架构优化</strong>: 修改网络结构，如增加/减少层数、改变连接方式等<br><strong>超参数调优</strong>: 调整学习率、批大小等超参数<br><strong>正则化优化</strong>: 使用Dropout、权重衰减等技术防止过拟合<br><strong>集成学习</strong>: 结合多个模型提升性能';
+                    break;
+                case 'hyperparameter':
+                    explanation.innerHTML = '<strong>网络架构优化</strong>: 修改网络结构，如增加/减少层数、改变连接方式等<br><strong>超参数调优</strong>: 调整学习率、批大小等超参数<br><strong>正则化优化</strong>: 使用Dropout、权重衰减等技术防止过拟合<br><strong>集成学习</strong>: 结合多个模型提升性能';
+                    break;
+                case 'regularization':
+                    explanation.innerHTML = '<strong>网络架构优化</strong>: 修改网络结构，如增加/减少层数、改变连接方式等<br><strong>超参数调优</strong>: 调整学习率、批大小等超参数<br><strong>正则化优化</strong>: 使用Dropout、权重衰减等技术防止过拟合<br><strong>集成学习</strong>: 结合多个模型提升性能';
+                    break;
+                case 'ensemble':
+                    explanation.innerHTML = '<strong>网络架构优化</strong>: 修改网络结构，如增加/减少层数、改变连接方式等<br><strong>超参数调优</strong>: 调整学习率、批大小等超参数<br><strong>正则化优化</strong>: 使用Dropout、权重衰减等技术防止过拟合<br><strong>集成学习</strong>: 结合多个模型提升性能';
+                    break;
+            }
+        }
+        
+        // 渲染模型选择
+        function renderModelSelection() {
+            const modelType = document.getElementById('model-type').value;
+            const modelSelection = document.getElementById('model-selection');
+            modelSelection.innerHTML = '';
+            
+            models[modelType].forEach(model => {
+                const modelCard = document.createElement('div');
+                modelCard.className = 'model-card';
+                modelCard.setAttribute('data-model-id', model.id);
+                modelCard.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="${model.icon} model-icon"></i>
+                        <div class="model-info">
+                            <div class="model-name">${model.name}</div>
+                            <div class="model-description">${model.description}</div>
+                        </div>
+                    </div>
+                `;
+                
+                modelCard.addEventListener('click', function() {
+                    document.querySelectorAll('.model-card').forEach(card => {
+                        card.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+                });
+                
+                modelSelection.appendChild(modelCard);
+            });
+            
+            // 默认选择第一个模型
+            if (models[modelType].length > 0) {
+                modelSelection.firstChild.classList.add('selected');
+            }
+        }
+        
+        // 渲染数据集选择
+        function renderDatasetSelection() {
+            const datasetSelection = document.getElementById('dataset-selection');
+            datasetSelection.innerHTML = '';
+            
+            datasets.forEach(dataset => {
+                const datasetCard = document.createElement('div');
+                datasetCard.className = 'dataset-card';
+                datasetCard.setAttribute('data-dataset-id', dataset.id);
+                datasetCard.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="${dataset.icon} dataset-icon"></i>
+                        <div class="dataset-info">
+                            <div class="dataset-name">${dataset.name}</div>
+                            <div class="dataset-stats">${dataset.type} · ${dataset.samples.toLocaleString()} 样本</div>
+                            <div class="dataset-description">${dataset.description}</div>
+                        </div>
+                        <button class="btn btn-outline-primary btn-sm dataset-preview-btn" data-dataset-id="${dataset.id}">
+                            <i class="fas fa-eye me-1"></i>预览
+                        </button>
+                    </div>
+                `;
+                
+                datasetCard.addEventListener('click', function(e) {
+                    // 防止点击预览按钮时触发选择
+                    if (!e.target.closest('.dataset-preview-btn')) {
+                        document.querySelectorAll('.dataset-card').forEach(card => {
+                            card.classList.remove('selected');
+                        });
+                        this.classList.add('selected');
+                        
+                        // 更新当前选中的数据集
+                        if (window.updateCurrentDataset) {
+                            window.updateCurrentDataset(dataset);
+                        }
+                        
+                        // 更新数据集切分预览
+                        if (window.updateSplitVisualization) {
+                            window.updateSplitVisualization();
+                        }
+                    }
+                });
+                
+                // 添加预览按钮事件
+                const previewBtn = datasetCard.querySelector('.dataset-preview-btn');
+                previewBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const datasetId = this.getAttribute('data-dataset-id');
+                    previewDataset(datasetId);
+                });
+                
+                datasetSelection.appendChild(datasetCard);
+            });
+            
+            // 默认选择第一个数据集
+            if (datasets.length > 0) {
+                datasetSelection.firstChild.classList.add('selected');
+                
+                // 更新当前选中的数据集
+                if (window.updateCurrentDataset) {
+                    window.updateCurrentDataset(datasets[0]);
+                }
+            }
+        }
+        
+        // 渲染格式化工具
+        function renderFormattingTools() {
+            const formattingToolsContainer = document.getElementById('formatting-tools');
+            formattingToolsContainer.innerHTML = '';
+            
+            formattingTools.forEach(tool => {
+                const toolCard = document.createElement('div');
+                toolCard.className = 'tool-card';
+                toolCard.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="${tool.icon} tool-icon"></i>
+                        <div class="tool-info">
+                            <div class="tool-name">${tool.name}</div>
+                            <div class="tool-description">${tool.description}</div>
+                            <div class="text-muted small">版本: ${tool.version} | 大小: ${tool.fileSize}</div>
+                        </div>
+                        <button class="btn btn-outline-success btn-sm" data-tool-id="${tool.id}">
+                            <i class="fas fa-download me-1"></i>下载
+                        </button>
+                    </div>
+                `;
+                
+                // 添加下载按钮事件
+                const downloadBtn = toolCard.querySelector('button');
+                downloadBtn.addEventListener('click', function() {
+                    const toolId = this.getAttribute('data-tool-id');
+                    downloadFormattingTool(toolId);
+                });
+                
+                formattingToolsContainer.appendChild(toolCard);
+            });
+        }
+        
+        // 渲染优化建议
+        function renderOptimizationSuggestions() {
+            const suggestionsContainer = document.getElementById('optimization-suggestions');
+            suggestionsContainer.innerHTML = '';
+            
+            optimizationSuggestions.forEach(suggestion => {
+                const suggestionItem = document.createElement('div');
+                suggestionItem.className = 'alert alert-info';
+                suggestionItem.style.fontSize = '0.9rem';
+                suggestionItem.innerHTML = `<i class="fas fa-lightbulb me-2"></i>${suggestion}`;
+                suggestionsContainer.appendChild(suggestionItem);
+            });
+        }
+        
+        // 预览数据集
+        function previewDataset(datasetId) {
+            const dataset = datasets.find(d => d.id == datasetId);
+            if (!dataset) return;
+            
+            currentPreviewDataset = dataset;
+            currentPreviewPage = 1;
+            
+            // 更新模态框标题
+            document.getElementById('datasetPreviewModalLabel').textContent = `数据集预览 - ${dataset.name}`;
+            
+            // 显示预览内容
+            renderPreviewContent();
+            
+            // 显示分页
+            renderPreviewPagination();
+            
+            // 显示模态框
+            const previewModal = new bootstrap.Modal(document.getElementById('datasetPreviewModal'));
+            previewModal.show();
+        }
+        
+        // 渲染预览内容
+        function renderPreviewContent() {
+            const previewContent = document.getElementById('preview-content');
+            previewContent.innerHTML = '';
+            
+            if (!currentPreviewDataset || !currentPreviewDataset.previewData) return;
+            
+            const startIndex = (currentPreviewPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, currentPreviewDataset.previewData.length);
+            const currentItems = currentPreviewDataset.previewData.slice(startIndex, endIndex);
+            
+            currentItems.forEach(item => {
+                let itemHtml = '';
+                
+                if (item.type === 'image') {
+                    itemHtml = `
+                        <div class="mb-4">
+                            <h6>${item.title}</h6>
+                            <img src="${item.url}" alt="${item.title}" class="preview-modal-image">
+                            <p class="text-muted">${item.description}</p>
+                        </div>
+                    `;
+                } else if (item.type === 'text') {
+                    itemHtml = `
+                        <div class="mb-4">
+                            <h6>${item.title}</h6>
+                            <div class="preview-modal-text">${item.content}</div>
+                            <p class="text-muted mt-2">${item.description}</p>
+                        </div>
+                    `;
+                }
+                
+                previewContent.innerHTML += itemHtml;
+            });
+        }
+        
+        // 渲染预览分页
+        function renderPreviewPagination() {
+            const pagination = document.getElementById('preview-pagination');
+            pagination.innerHTML = '';
+            
+            if (!currentPreviewDataset || !currentPreviewDataset.previewData) return;
+            
+            const totalPages = Math.ceil(currentPreviewDataset.previewData.length / itemsPerPage);
+            
+            // 上一页按钮
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPreviewPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" data-page="${currentPreviewPage - 1}">上一页</a>`;
+            pagination.appendChild(prevLi);
+            
+            // 页码按钮
+            for (let i = 1; i <= totalPages; i++) {
+                const pageLi = document.createElement('li');
+                pageLi.className = `page-item ${i === currentPreviewPage ? 'active' : ''}`;
+                pageLi.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+                pagination.appendChild(pageLi);
+            }
+            
+            // 下一页按钮
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPreviewPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" data-page="${currentPreviewPage + 1}">下一页</a>`;
+            pagination.appendChild(nextLi);
+            
+            // 添加分页事件
+            pagination.querySelectorAll('.page-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const page = parseInt(this.getAttribute('data-page'));
+                    if (page >= 1 && page <= totalPages && page !== currentPreviewPage) {
+                        currentPreviewPage = page;
+                        renderPreviewContent();
+                        renderPreviewPagination();
+                    }
+                });
+            });
+        }
+        
+        // 下载格式化工具
+        function downloadFormattingTool(toolId) {
+            const tool = formattingTools.find(t => t.id == toolId);
+            if (!tool) return;
+            
+            // 模拟下载过程
+            alert(`开始下载 ${tool.name} (${tool.fileSize})...`);
+            // 实际应用中这里应该触发文件下载
+        }
+        
+        // 更新代码编辑器内容
+        function updateCodeEditor(fileType) {
+            const codeEditor = document.getElementById('code-editor');
+            let codeContent = '';
+            
+            switch(fileType) {
+                case 'model-arch':
+                    codeContent = `# ResNet-50模型架构优化代码
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms, models
+
+# 定义优化后的ResNet模型
+class OptimizedResNet(nn.Module):
+    def __init__(self, num_classes=10):
+        super(OptimizedResNet, self).__init__()
+        # 使用预训练的ResNet-50作为基础模型
+        self.resnet = models.resnet50(pretrained=True)
+        
+        # 修改最后一层全连接层以适应CIFAR-10的10个类别
+        num_features = self.resnet.fc.in_features
+        self.resnet.fc = nn.Sequential(
+            nn.Dropout(0.5),  # 增加Dropout防止过拟合
+            nn.Linear(num_features, 512),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.3),
+            nn.Linear(512, num_classes)
+        )
+        
+    def forward(self, x):
+        return self.resnet(x)`;
+                    break;
+                case 'training-loop':
+                    codeContent = `# 训练循环优化代码
+def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs=50):
+    best_acc = 0.0
+    
+    for epoch in range(num_epochs):
+        # 训练阶段
+        model.train()
+        running_loss = 0.0
+        running_corrects = 0
+        
+        for inputs, labels in train_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            
+            optimizer.zero_grad()
+            
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            
+            loss.backward()
+            optimizer.step()
+            
+            _, preds = torch.max(outputs, 1)
+            running_loss += loss.item() * inputs.size(0)
+            running_corrects += torch.sum(preds == labels.data)
+        
+        epoch_loss = running_loss / len(train_loader.dataset)
+        epoch_acc = running_corrects.double() / len(train_loader.dataset)
+        
+        # 验证阶段
+        model.eval()
+        val_loss = 0.0
+        val_corrects = 0
+        
+        with torch.no_grad():
+            for inputs, labels in val_loader:
+                inputs, labels = inputs.to(device), labels.to(device)
+                
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                
+                _, preds = torch.max(outputs, 1)
+                val_loss += loss.item() * inputs.size(0)
+                val_corrects += torch.sum(preds == labels.data)
+        
+        val_loss = val_loss / len(val_loader.dataset)
+        val_acc = val_corrects.double() / len(val_loader.dataset)
+        
+        # 更新学习率
+        scheduler.step()
+        
+        # 保存最佳模型
+        if val_acc > best_acc:
+            best_acc = val_acc
+            torch.save(model.state_dict(), 'best_model.pth')
+        
+        print(f'Epoch {epoch+1}/{num_epochs}, Train Loss: {epoch_loss:.4f}, Train Acc: {epoch_acc:.4f}, '
+              f'Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}')
+    
+    return model`;
+                    break;
+                case 'loss-function':
+                    codeContent = `# 损失函数优化代码
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=1, gamma=2, reduction='mean'):
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.reduction = reduction
+
+    def forward(self, inputs, targets):
+        BCE_loss = F.cross_entropy(inputs, targets, reduction='none')
+        pt = torch.exp(-BCE_loss)
+        F_loss = self.alpha * (1-pt)**self.gamma * BCE_loss
+
+        if self.reduction == 'mean':
+            return torch.mean(F_loss)
+        elif self.reduction == 'sum':
+            return torch.sum(F_loss)
+        else:
+            return F_loss
+
+# 组合损失函数
+class CombinedLoss(nn.Module):
+    def __init__(self, weight_ce=0.7, weight_focal=0.3):
+        super(CombinedLoss, self).__init__()
+        self.weight_ce = weight_ce
+        self.weight_focal = weight_focal
+        self.ce_loss = nn.CrossEntropyLoss()
+        self.focal_loss = FocalLoss()
+
+    def forward(self, inputs, targets):
+        ce = self.ce_loss(inputs, targets)
+        focal = self.focal_loss(inputs, targets)
+        return self.weight_ce * ce + self.weight_focal * focal`;
+                    break;
+                case 'optimizer':
+                    codeContent = `# 优化器配置代码
+import torch
+import torch.optim as optim
+
+def get_optimizer(model, optimizer_type='adamw', lr=0.001, weight_decay=0.01):
+    if optimizer_type == 'adam':
+        return optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    elif optimizer_type == 'sgd':
+        return optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
+    elif optimizer_type == 'rmsprop':
+        return optim.RMSprop(model.parameters(), lr=lr, weight_decay=weight_decay)
+    elif optimizer_type == 'adamw':
+        return optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+    else:
+        raise ValueError(f"Unsupported optimizer type: {optimizer_type}")
+
+# 学习率调度器
+def get_scheduler(optimizer, scheduler_type='step', step_size=10, gamma=0.1):
+    if scheduler_type == 'step':
+        return optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
+    elif scheduler_type == 'cosine':
+        return optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50)
+    elif scheduler_type == 'plateau':
+        return optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5)
+    else:
+        raise ValueError(f"Unsupported scheduler type: {scheduler_type}")`;
+                    break;
+            }
+            
+            codeEditor.textContent = codeContent;
+        }
+        
+        // 初始化图表
+        function initCharts() {
+            // 准确率对比图表
+            accuracyComparisonChart = echarts.init(document.getElementById('accuracy-comparison-chart'));
+            accuracyComparisonChart.setOption({
+                tooltip: {
+                    trigger: 'axis'
+                },
+                legend: {
+                    data: ['优化前准确率', '优化后准确率']
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: ['1', '5', '10', '15', '20', '25', '30', '35', '40', '45', '50']
+                },
+                yAxis: {
+                    type: 'value',
+                    min: 0,
+                    max: 100,
+                    axisLabel: {
+                        formatter: '{value}%'
+                    }
+                },
+                series: [
+                    {
+                        name: '优化前准确率',
+                        type: 'line',
+                        data: [25, 40, 52, 60, 65, 68, 70, 72, 74, 75, 76],
+                        smooth: true,
+                        lineStyle: {
+                            width: 2,
+                            color: '#e74c3c'
+                        }
+                    },
+                    {
+                        name: '优化后准确率',
+                        type: 'line',
+                        data: [25, 45, 60, 72, 78, 83, 86, 88, 90, 91, 92.5],
+                        smooth: true,
+                        lineStyle: {
+                            width: 3,
+                            color: '#2ecc71'
+                        }
+                    }
+                ]
+            });
+            
+            // 损失函数对比图表
+            lossComparisonChart = echarts.init(document.getElementById('loss-comparison-chart'));
+            lossComparisonChart.setOption({
+                tooltip: {
+                    trigger: 'axis'
+                },
+                legend: {
+                    data: ['优化前损失', '优化后损失']
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: ['1', '5', '10', '15', '20', '25', '30', '35', '40', '45', '50']
+                },
+                yAxis: {
+                    type: 'value',
+                    min: 0,
+                    max: 2.5
+                },
+                series: [
+                    {
+                        name: '优化前损失',
+                        type: 'line',
+                        data: [2.3, 1.9, 1.5, 1.2, 1.0, 0.85, 0.75, 0.68, 0.62, 0.58, 0.55],
+                        smooth: true,
+                        lineStyle: {
+                            width: 2,
+                            color: '#e74c3c'
+                        }
+                    },
+                    {
+                        name: '优化后损失',
+                        type: 'line',
+                        data: [2.3, 1.8, 1.2, 0.8, 0.6, 0.45, 0.35, 0.28, 0.24, 0.22, 0.215],
+                        smooth: true,
+                        lineStyle: {
+                            width: 3,
+                            color: '#2ecc71'
+                        }
+                    }
+                ]
+            });
+            
+            // 实时监控图表
+            realtimeChart = echarts.init(document.getElementById('realtime-chart'));
+            realtimeChart.setOption({
+                tooltip: {
+                    trigger: 'axis'
+                },
+                legend: {
+                    data: ['GPU使用率', '内存使用率']
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: []
+                },
+                yAxis: {
+                    type: 'value',
+                    min: 0,
+                    max: 100,
+                    axisLabel: {
+                        formatter: '{value}%'
+                    }
+                },
+                series: [
+                    {
+                        name: 'GPU使用率',
+                        type: 'line',
+                        data: [],
+                        smooth: true,
+                        lineStyle: {
+                            width: 2
+                        }
+                    },
+                    {
+                        name: '内存使用率',
+                        type: 'line',
+                        data: [],
+                        smooth: true,
+                        lineStyle: {
+                            width: 2
+                        }
+                    }
+                ]
+            });
+            
+            // 混淆矩阵图表
+            confusionMatrixChart = echarts.init(document.getElementById('confusion-matrix-chart'));
+            confusionMatrixChart.setOption({
+                tooltip: {
+                    position: 'top'
+                },
+                grid: {
+                    height: '80%',
+                    top: '10%'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: ['飞机', '汽车', '鸟', '猫', '鹿', '狗', '青蛙', '马', '船', '卡车'],
+                    splitArea: {
+                        show: true
+                    }
+                },
+                yAxis: {
+                    type: 'category',
+                    data: ['飞机', '汽车', '鸟', '猫', '鹿', '狗', '青蛙', '马', '船', '卡车'],
+                    splitArea: {
+                        show: true
+                    }
+                },
+                visualMap: {
+                    min: 0,
+                    max: 1000,
+                    calculable: true,
+                    orient: 'horizontal',
+                    left: 'center',
+                    bottom: '0%'
+                },
+                series: [{
+                    name: '混淆矩阵',
+                    type: 'heatmap',
+                    data: generateConfusionMatrixData(),
+                    label: {
+                        show: true
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }]
+            });
+            
+            // 类别改进图表
+            categoryImprovementChart = echarts.init(document.getElementById('category-improvement-chart'));
+            categoryImprovementChart.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                legend: {
+                    data: ['优化前', '优化后']
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'value'
+                },
+                yAxis: {
+                    type: 'category',
+                    data: ['飞机', '汽车', '鸟', '猫', '鹿', '狗', '青蛙', '马', '船', '卡车']
+                },
+                series: [
+                    {
+                        name: '优化前',
+                        type: 'bar',
+                        data: [78, 82, 65, 70, 75, 68, 80, 77, 85, 90],
+                        itemStyle: {
+                            color: '#e74c3c'
+                        }
+                    },
+                    {
+                        name: '优化后',
+                        type: 'bar',
+                        data: [92, 95, 88, 90, 93, 85, 94, 91, 96, 98],
+                        itemStyle: {
+                            color: '#2ecc71'
+                        }
+                    }
+                ]
+            });
+            
+            // 窗口大小变化时重绘图表
+            window.addEventListener('resize', function() {
+                accuracyComparisonChart.resize();
+                lossComparisonChart.resize();
+                realtimeChart.resize();
+                confusionMatrixChart.resize();
+                categoryImprovementChart.resize();
+            });
+        }
+        
+        // 生成混淆矩阵数据
+        function generateConfusionMatrixData() {
+            const data = [];
+            const classes = ['飞机', '汽车', '鸟', '猫', '鹿', '狗', '青蛙', '马', '船', '卡车'];
+            
+            for (let i = 0; i < classes.length; i++) {
+                for (let j = 0; j < classes.length; j++) {
+                    // 对角线上的值较高（正确分类）
+                    if (i === j) {
+                        data.push([j, i, Math.floor(Math.random() * 200) + 800]);
+                    } else {
+                        // 非对角线上的值较低（错误分类）
+                        data.push([j, i, Math.floor(Math.random() * 50) + 10]);
+                    }
+                }
+            }
+            
+            return data;
+        }
+        
+        // 渲染训练日志
+        function renderTrainingLog() {
+            const logContainer = document.getElementById('training-log');
+            logContainer.innerHTML = '';
+            
+            trainingLogs.forEach(log => {
+                const logEntry = document.createElement('div');
+                logEntry.className = 'log-entry';
+                logEntry.innerHTML = `<span class="text-muted">[${log.time}]</span> <span class="log-${log.type}">${log.message}</span>`;
+                logContainer.appendChild(logEntry);
+            });
+            
+            // 滚动到底部
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        // 渲染性能表格
+        function renderPerformanceTable() {
+            // 此函数在参考代码中定义但未使用，保留以保持一致性
+        }
+        
+        // 添加日志条目
+        function addLogEntry(type, message) {
+            const now = new Date();
+            const timeString = now.toTimeString().split(' ')[0];
+            
+            trainingLogs.push({
+                time: timeString,
+                type: type,
+                message: message
+            });
+            
+            renderTrainingLog();
+        }
+        
+        // 下一步
+        function nextStep(step) {
+            // 验证当前步骤是否完成
+            if (!validateStep(step)) {
+                return;
+            }
+            
+            // 对于步骤5，需要检查训练是否完成
+            if (step === 5 && trainingProgress < 100) {
+                alert('优化训练尚未完成，无法进入下一步');
+                return;
+            }
+            
+            // 隐藏当前步骤
+            document.getElementById(`step-${step}`).classList.remove('active');
+            
+            // 更新步骤指示器
+            document.querySelector(`.step-item[data-step="${step}"]`).classList.remove('active');
+            document.querySelector(`.step-item[data-step="${step}"]`).classList.add('completed');
+            
+            // 显示下一步
+            currentStep = step + 1;
+            document.getElementById(`step-${currentStep}`).classList.add('active');
+            document.querySelector(`.step-item[data-step="${currentStep}"]`).classList.add('active');
+            
+            // 如果是执行训练步骤，初始化训练状态
+            if (currentStep === 5) {
+                resetTrainingProgress();
+            }
+            
+            // 如果是结果评估步骤，更新图表
+            if (currentStep === 6) {
+                updateResultCharts();
+            }
+        }
+        
+        // 上一步
+        function prevStep(step) {
+            // 隐藏当前步骤
+            document.getElementById(`step-${step}`).classList.remove('active');
+            
+            // 更新步骤指示器
+            document.querySelector(`.step-item[data-step="${step}"]`).classList.remove('active');
+            
+            // 显示上一步
+            currentStep = step - 1;
+            document.getElementById(`step-${currentStep}`).classList.add('active');
+            document.querySelector(`.step-item[data-step="${currentStep}"]`).classList.add('active');
+        }
+        
+        // 验证步骤是否完成
+        function validateStep(step) {
+            switch(step) {
+                case 1: // 选择模型
+                    const selectedModel = document.querySelector('.model-card.selected');
+                    if (!selectedModel) {
+                        alert('请选择一个基础模型');
+                        return false;
+                    }
+                    break;
+                case 2: // 选择数据集
+                    const datasetType = document.getElementById('dataset-type').value;
+                    if (datasetType === 'predefined') {
+                        const selectedDataset = document.querySelector('.dataset-card.selected');
+                        if (!selectedDataset) {
+                            alert('请选择一个数据集');
+                            return false;
+                        }
+                        
+                        // 验证样本数量
+                        const sampleSize = window.getCurrentSampleSize ? window.getCurrentSampleSize() : 0;
+                        const datasetId = selectedDataset.getAttribute('data-dataset-id');
+                        const dataset = datasets.find(d => d.id == datasetId);
+                        
+                        if (dataset && sampleSize > dataset.samples) {
+                            alert('样本数量不能超过数据集总样本数');
+                            return false;
+                        }
+                    } else {
+                        const fileList = document.getElementById('file-list');
+                        if (fileList.children.length === 0) {
+                            alert('请上传至少一个文件');
+                            return false;
+                        }
+                    }
+                    
+                    // 验证数据集切分比例
+                    const trainSplit = parseInt(document.getElementById('train-split-input').value);
+                    const valSplit = parseInt(document.getElementById('val-split-input').value);
+                    const testSplit = parseInt(document.getElementById('test-split-input').value);
+                    
+                    if (trainSplit + valSplit + testSplit !== 100) {
+                        alert('数据集切分比例总和必须为100%');
+                        return false;
+                    }
+                    break;
+                case 3: // 代码编辑
+                    const codeEditor = document.getElementById('code-editor');
+                    if (!codeEditor.textContent.trim()) {
+                        alert('请编写或修改模型代码');
+                        return false;
+                    }
+                    break;
+                case 4: // 配置参数
+                    const learningRate = parseFloat(document.getElementById('learning-rate').value);
+                    if (isNaN(learningRate) || learningRate < 0.0001 || learningRate > 0.1) {
+                        alert('学习率必须在0.0001到0.1之间');
+                        return false;
+                    }
+                    
+                    const epochs = parseInt(document.getElementById('epochs').value);
+                    if (isNaN(epochs) || epochs < 10 || epochs > 200) {
+                        alert('训练轮数必须在10到200之间');
+                        return false;
+                    }
+                    
+                    const batchSize = parseInt(document.getElementById('batch-size').value);
+                    if (isNaN(batchSize) || batchSize < 16 || batchSize > 128) {
+                        alert('批处理大小必须在16到128之间');
+                        return false;
+                    }
+                    break;
+            }
+            return true;
+        }
+        
+        // 测试代码
+        function testCode() {
+            addLogEntry('info', '开始代码语法检查...');
+            setTimeout(() => {
+                addLogEntry('success', '代码语法检查通过，无错误');
+                alert('代码语法检查通过，可以继续下一步');
+            }, 1000);
+        }
+        
+        // 开始训练
+        function startTraining() {
+            if (isTraining) return;
+            
+            isTraining = true;
+            document.getElementById('start-training-btn').style.display = 'none';
+            document.getElementById('pause-training-btn').style.display = 'inline-block';
+            document.getElementById('stop-training-btn').style.display = 'inline-block';
+            
+            addLogEntry('info', '开始模型优化训练');
+            
+            // 模拟训练过程
+            trainingInterval = setInterval(() => {
+                trainingProgress += Math.random() * 2;
+                if (trainingProgress >= 100) {
+                    trainingProgress = 100;
+                    completeTraining();
+                }
+                
+                updateTrainingProgress(trainingProgress);
+                
+                // 更新实时监控图表
+                updateRealtimeChart();
+                
+                // 更新下一步按钮状态
+                updateNextButtonState();
+            }, 500);
+        }
+        
+        // 暂停训练
+        function pauseTraining() {
+            if (!isTraining) return;
+            
+            isTraining = false;
+            document.getElementById('pause-training-btn').style.display = 'none';
+            document.getElementById('start-training-btn').style.display = 'inline-block';
+            
+            clearInterval(trainingInterval);
+            addLogEntry('warning', '优化训练已暂停');
+        }
+        
+        // 停止训练
+        function stopTraining() {
+            isTraining = false;
+            document.getElementById('pause-training-btn').style.display = 'none';
+            document.getElementById('stop-training-btn').style.display = 'none';
+            document.getElementById('start-training-btn').style.display = 'inline-block';
+            
+            clearInterval(trainingInterval);
+            addLogEntry('error', '优化训练已停止');
+            resetTrainingProgress();
+            
+            // 更新下一步按钮状态
+            updateNextButtonState();
+        }
+        
+        // 更新训练进度
+        function updateTrainingProgress(progress) {
+            const progressBar = document.getElementById('training-progress-bar');
+            const progressText = document.getElementById('training-progress-text');
+            
+            progressBar.style.width = `${progress}%`;
+            progressBar.setAttribute('aria-valuenow', progress);
+            progressText.textContent = `${Math.round(progress)}%`;
+            
+            // 模拟训练日志
+            if (progress % 10 === 0) {
+                addLogEntry('info', `优化训练进度: ${Math.round(progress)}%`);
+            }
+            
+            // 模拟训练过程中的事件
+            if (progress > 30 && progress < 35) {
+                addLogEntry('info', '完成第15轮优化训练，当前准确率: 72%');
+            }
+            
+            if (progress > 60 && progress < 65) {
+                addLogEntry('info', '完成第30轮优化训练，当前准确率: 86%');
+            }
+        }
+        
+        // 重置训练进度
+        function resetTrainingProgress() {
+            trainingProgress = 0;
+            updateTrainingProgress(0);
+            
+            // 更新下一步按钮状态
+            updateNextButtonState();
+        }
+        
+        // 完成训练
+        function completeTraining() {
+            isTraining = false;
+            clearInterval(trainingInterval);
+            
+            document.getElementById('pause-training-btn').style.display = 'none';
+            document.getElementById('stop-training-btn').style.display = 'none';
+            document.getElementById('start-training-btn').style.display = 'inline-block';
+            
+            addLogEntry('success', '优化训练完成！最终准确率: 92.5%');
+            
+            // 更新状态指示器
+            document.querySelector('.status-indicator').classList.remove('status-running');
+            document.querySelector('.status-indicator').classList.add('status-completed');
+            document.querySelector('.training-status span').textContent = '优化训练已完成';
+            
+            // 更新下一步按钮状态
+            updateNextButtonState();
+        }
+        
+        // 更新下一步按钮状态
+        function updateNextButtonState() {
+            const nextButton = document.getElementById('next-step-btn');
+            
+            if (trainingProgress >= 100) {
+                nextButton.disabled = false;
+                nextButton.classList.remove('btn-next-disabled');
+            } else {
+                nextButton.disabled = true;
+                nextButton.classList.add('btn-next-disabled');
+            }
+        }
+        
+        // 更新实时监控图表
+        function updateRealtimeChart() {
+            const option = realtimeChart.getOption();
+            const now = new Date();
+            const timeString = now.toTimeString().split(' ')[0].substring(3); // 只显示分:秒
+            
+            // 添加新数据点
+            option.xAxis[0].data.push(timeString);
+            option.series[0].data.push(Math.random() * 30 + 70); // GPU使用率 70-100%
+            option.series[1].data.push(Math.random() * 20 + 60); // 内存使用率 60-80%
+            
+            // 保持数据点数量不超过20个
+            if (option.xAxis[0].data.length > 20) {
+                option.xAxis[0].data.shift();
+                option.series[0].data.shift();
+                option.series[1].data.shift();
+            }
+            
+            realtimeChart.setOption(option);
+        }
+        
+        // 更新结果图表
+        function updateResultCharts() {
+            // 这里可以添加更新结果图表的逻辑
+            // 由于是演示，我们只是重新渲染图表
+            accuracyComparisonChart.resize();
+            lossComparisonChart.resize();
+            confusionMatrixChart.resize();
+            categoryImprovementChart.resize();
+        }
+        
+        // 导出模型权重
+        function exportModelWeights() {
+            const format = document.querySelector('input[name="weight-format"]:checked').value;
+            const includeWeights = document.getElementById('include-weights').checked;
+            const includeArchitecture = document.getElementById('include-architecture').checked;
+            const includeOptimizer = document.getElementById('include-optimizer').checked;
+            
+            let content = [];
+            if (includeWeights) content.push("模型权重");
+            if (includeArchitecture) content.push("模型架构");
+            if (includeOptimizer) content.push("优化器状态");
+            
+            alert(`开始导出模型权重文件（格式: ${format}，包含: ${content.join(', ')}）...`);
+            // 实际应用中这里应该触发文件下载
+        }
+        
+        // 发布模型
+        function publishModel() {
+            const modelName = document.getElementById('model-name').value;
+            const publishLocation = document.getElementById('publish-location').value;
+            
+            if (!modelName) {
+                alert('请输入模型名称');
+                return;
+            }
+            
+            addLogEntry('info', `优化后的模型 "${modelName}" 已发布到 ${getPublishLocationName(publishLocation)}`);
+            alert(`优化后的模型 "${modelName}" 发布成功！`);
+            
+            // 这里可以添加实际发布模型的逻辑
+        }
+        
+        // 获取发布位置名称
+        function getPublishLocationName(location) {
+            switch(location) {
+                case 'personal': return '个人资源中心';
+                case 'class': return '班级共享资源';
+                case 'school': return '全校资源库';
+                default: return '未知位置';
+            }
+        }
+        
+        // 设置文件上传功能
+        function setupFileUpload() {
+            const fileInput = document.getElementById('file-input');
+            const fileList = document.getElementById('file-list');
+            const uploadArea = document.getElementById('custom-dataset-upload');
+            const browseFilesLink = document.getElementById('browse-files');
+            
+            // 点击上传区域触发文件选择
+            browseFilesLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                fileInput.click();
+            });
+            
+            // 拖放文件到上传区域
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('active');
+            });
+            
+            uploadArea.addEventListener('dragleave', function() {
+                this.classList.remove('active');
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('active');
+                
+                const files = e.dataTransfer.files;
+                handleFiles(files);
+            });
+            
+            // 文件选择事件
+            fileInput.addEventListener('change', function() {
+                handleFiles(this.files);
+                this.value = ''; // 重置文件输入
+            });
+            
+            // 处理选中的文件
+            function handleFiles(files) {
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    
+                    // 验证文件类型和大小
+                    if (!validateFileType(file)) {
+                        alert(`文件 "${file.name}" 的类型不支持。请上传 JPG, PNG, CSV, TXT 或 ZIP 文件。`);
+                        continue;
+                    }
+                    
+                    if (!validateFileSize(file)) {
+                        alert(`文件 "${file.name}" 的大小超过 100MB 限制。`);
+                        continue;
+                    }
+                    
+                    // 创建文件项
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    
+                    // 获取文件图标
+                    let fileIcon = 'fa-file';
+                    if (file.type.startsWith('image/')) {
+                        fileIcon = 'fa-file-image';
+                    } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+                        fileIcon = 'fa-file-csv';
+                    } else if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+                        fileIcon = 'fa-file-alt';
+                    } else if (file.type === 'application/zip' || file.name.endsWith('.zip')) {
+                        fileIcon = 'fa-file-archive';
+                    }
+                    
+                    fileItem.innerHTML = `
+                        <div class="file-info">
+                            <i class="fas ${fileIcon} file-icon"></i>
+                            <div>
+                                <div>${file.name}</div>
+                                <div class="text-muted small">${(file.size / 1024 / 1024).toFixed(2)} MB</div>
+                                <div class="upload-progress">
+                                    <div class="upload-progress-bar"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn btn-sm btn-outline-danger delete-file"><i class="fas fa-times"></i></button>
+                        </div>
+                    `;
+                    
+                    fileList.appendChild(fileItem);
+                    
+                    // 添加删除文件功能
+                    const deleteBtn = fileItem.querySelector('.delete-file');
+                    deleteBtn.addEventListener('click', function() {
+                        fileItem.remove();
+                    });
+                    
+                    // 模拟上传过程
+                    uploadFile(file, fileItem);
+                }
+            }
+            
+            // 文件类型验证
+            function validateFileType(file) {
+                const allowedTypes = ['image/jpeg', 'image/png', 'text/csv', 'text/plain', 'application/zip'];
+                const allowedExtensions = ['.jpg', '.jpeg', '.png', '.csv', '.txt', '.zip'];
+                const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+                
+                return allowedTypes.includes(file.type) || allowedExtensions.includes(fileExtension);
+            }
+            
+            // 文件大小验证 (100MB限制)
+            function validateFileSize(file) {
+                const maxSize = 100 * 1024 * 1024; // 100MB
+                return file.size <= maxSize;
+            }
+            
+            // 模拟文件上传
+            function uploadFile(file, fileItem) {
+                const progressBar = fileItem.querySelector('.upload-progress-bar');
+                let progress = 0;
+                
+                const interval = setInterval(() => {
+                    progress += Math.random() * 10;
+                    if (progress >= 100) {
+                        progress = 100;
+                        clearInterval(interval);
+                        fileItem.querySelector('.file-actions').innerHTML = '<i class="fas fa-check text-success"></i>';
+                    }
+                    progressBar.style.width = progress + '%';
+                }, 200);
+            }
+        }
+    </script>
+</body>
+</html>
