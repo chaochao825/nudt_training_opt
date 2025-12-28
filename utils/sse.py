@@ -9,41 +9,57 @@ from datetime import datetime
 def sse_print(event: str, data: dict, progress: int = None, message: str = None, log: str = None, 
               callback_params: dict = None, details: dict = None) -> str:
     """
-    SSE print with standardized format
+    SSE print with new standardized format:
+    event: event_name
+    data: {"callback_params": {...}, "progress": ..., "message": "...", "log": "...", ...}
     """
-    response = {
-        "resp_code": 0,
-        "resp_msg": "操作成功",
-        "time_stamp": datetime.now().strftime("%Y/%m/%d-%H:%M:%S:%f")[:-3],
-        "data": {
-            "event": event
-        }
-    }
+    # Initialize the payload (the content of the 'data:' line)
+    payload = {}
     
+    # Add callback_params if provided
     if callback_params:
-        response["data"]["callback_params"] = callback_params
+        payload["callback_params"] = callback_params
+    else:
+        # Default callback params if none provided (as seen in user example)
+        payload["callback_params"] = {
+            "task_run_id": f"training_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            "method_type": "模型训练",
+            "algorithm_type": "深度学习",
+            "task_type": "决策式AI训练",
+            "task_name": "决策式AI模型开发优化",
+            "user_name": "admin"
+        }
     
+    # Add progress if provided
     if progress is not None:
-        response["data"]["progress"] = progress
+        payload["progress"] = progress
     
+    # Add message if provided
     if message:
-        response["data"]["message"] = message
+        payload["message"] = message
     
+    # Add log if provided
     if log:
-        response["data"]["log"] = log
+        payload["log"] = log
     elif progress is not None and message:
-        response["data"]["log"] = f"[{progress}%] {message}\n"
+        payload["log"] = f"[{progress}%] {message}\n"
     
+    # Add details or merge with data
     if details:
-        response["data"]["details"] = details
+        payload["details"] = details
     elif data and event not in ["input_path_validated", "output_path_validated", 
                                   "input_data_validated", "input_model_validated"]:
-        response["data"]["details"] = data
+        payload["details"] = data
     else:
-        response["data"].update(data)
+        # For validation events or other specific cases, merge data directly into payload
+        payload.update(data)
     
-    json_str = json.dumps(response, ensure_ascii=False, default=lambda obj: obj.item() if isinstance(obj, np.generic) else obj)
-    message_str = f"data: {json_str}\n\n"
+    # Serialize the payload
+    json_str = json.dumps(payload, ensure_ascii=False, default=lambda obj: obj.item() if isinstance(obj, np.generic) else obj)
+    
+    # Construct the SSE multi-line output
+    message_str = f"event: {event}\ndata: {json_str}\n\n"
+    
     sys.stdout.write(message_str)
     sys.stdout.flush()
     return message_str

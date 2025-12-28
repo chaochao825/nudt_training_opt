@@ -7,7 +7,7 @@ WORKDIR /project
 # Copy requirements
 COPY requirements.txt ./
 
-# Install PyTorch and dependencies
+# Install PyTorch and dependencies (Using CPU version for robustness and resource efficiency)
 RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -28,5 +28,5 @@ ENV batch_size=32
 ENV lr=0.001
 ENV process=train
 
-# Run main script
-CMD ["python", "main.py"]
+# Run main script with unbuffered output
+CMD ["python", "-u", "main.py"]

@@ -3,7 +3,7 @@ import os
 import torch
 from easydict import EasyDict
 
-from utils.sse import sse_input_path_validated, sse_output_path_validated, sse_error
+from utils.sse import sse_input_path_validated, sse_output_path_validated, sse_error, sse_print
 from utils.yaml_rw import save_yaml
 from models.model_factory import get_model
 from train.dataset import get_dataloaders
@@ -25,6 +25,9 @@ def parse_args():
     parser.add_argument('--epochs', type=int, default=5, help='number of epochs')
     parser.add_argument('--batch_size', type=int, default=32, help='batch size')
     parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
+    parser.add_argument('--optimizer_type', type=str, default='Adam', choices=['Adam', 'SGD', 'RMSprop'], help='optimizer type')
+    parser.add_argument('--weight_decay', type=float, default=1e-4, help='weight decay')
+    parser.add_argument('--momentum', type=float, default=0.9, help='momentum (for SGD)')
     
     # Process type (for different training scenarios)
     parser.add_argument('--process', type=str, default='train', help='process type [train, optimize, develop]')
@@ -47,6 +50,11 @@ def parse_args():
     args.lr = float(os.getenv('lr', args.lr))
     args.process = os.getenv('process', args.process)
     
+    # New optimizable parameters
+    args.optimizer_type = os.getenv('optimizer_type', args.optimizer_type)
+    args.weight_decay = float(os.getenv('weight_decay', args.weight_decay))
+    args.momentum = float(os.getenv('momentum', args.momentum))
+    
     # For backward compatibility with the validator in sse.py which uses .input_path and .output_path
     args.input_path = args.input_dir
     args.output_path = args.output_dir
@@ -55,6 +63,9 @@ def parse_args():
 
 def main():
     args = parse_args()
+    
+    # 0. Initial progress
+    sse_print("task_start", {"message": "训练任务开始初始化"}, progress=0, message="任务启动")
     
     # 1. Validate paths
     sse_input_path_validated(args)
@@ -111,7 +122,10 @@ def main():
             epochs=args.epochs,
             lr=args.lr,
             output_path=args.output_dir,
-            model_name=args.model
+            model_name=args.model,
+            optimizer_type=args.optimizer_type,
+            weight_decay=args.weight_decay,
+            momentum=args.momentum
         )
     else:
         sse_error(f"不支持的处理类型: {args.process}")

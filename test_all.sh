@@ -14,27 +14,10 @@ echo "Building Docker image..."
 docker build -t "$IMAGE_NAME" .
 
 echo "------------------------------------------------"
-echo "Starting Training Test - ResNet50 on CIFAR-10"
+echo "Starting Training Test - VGG16 on CIFAR-10"
 echo "------------------------------------------------"
 
-docker run --rm --shm-size=2g \
-    -v "$INPUT_DIR":/input \
-    -v "$OUTPUT_DIR":/output \
-    -e INPUT_DIR=/input \
-    -e OUTPUT_DIR=/output \
-    -e model=resnet50 \
-    -e dataset=CIFAR-10 \
-    -e epochs=1 \
-    -e batch_size=16 \
-    -e lr=0.0001 \
-    -e process=train \
-    "$IMAGE_NAME"
-
-echo "------------------------------------------------"
-echo "Starting Optimization Test - VGG16 on CIFAR-10"
-echo "------------------------------------------------"
-
-docker run --rm --shm-size=2g \
+docker run --rm --shm-size=1g \
     -v "$INPUT_DIR":/input \
     -v "$OUTPUT_DIR":/output \
     -e INPUT_DIR=/input \
@@ -43,15 +26,34 @@ docker run --rm --shm-size=2g \
     -e dataset=CIFAR-10 \
     -e epochs=1 \
     -e batch_size=8 \
-    -e lr=0.00005 \
+    -e lr=0.001 \
+    -e process=train \
+    -e DEBUG_MODE=true \
+    "$IMAGE_NAME"
+
+echo "------------------------------------------------"
+echo "Starting Optimization Test - ResNet50 on CIFAR-10"
+echo "------------------------------------------------"
+
+docker run --rm --shm-size=1g \
+    -v "$INPUT_DIR":/input \
+    -v "$OUTPUT_DIR":/output \
+    -e INPUT_DIR=/input \
+    -e OUTPUT_DIR=/output \
+    -e model=resnet50 \
+    -e dataset=CIFAR-10 \
+    -e epochs=1 \
+    -e batch_size=8 \
+    -e lr=0.0001 \
     -e process=optimize \
+    -e DEBUG_MODE=true \
     "$IMAGE_NAME"
 
 echo "------------------------------------------------"
 echo "Starting Development Test - Inception V3 on CIFAR-10"
 echo "------------------------------------------------"
 
-docker run --rm --shm-size=2g \
+docker run --rm --shm-size=1g \
     -v "$INPUT_DIR":/input \
     -v "$OUTPUT_DIR":/output \
     -e INPUT_DIR=/input \
@@ -62,6 +64,7 @@ docker run --rm --shm-size=2g \
     -e batch_size=8 \
     -e lr=0.0001 \
     -e process=develop \
+    -e DEBUG_MODE=true \
     "$IMAGE_NAME"
 
 echo "Tests completed. Results are in $OUTPUT_DIR"

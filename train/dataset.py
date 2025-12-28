@@ -33,7 +33,17 @@ def get_dataloaders(data_dir, dataset_name='CIFAR-10', batch_size=32, num_worker
     ])
 
     # Construct path for specific dataset
-    dataset_path = os.path.join(data_dir, dataset_name)
+    # Support for @input/CIFAR-10 notation or absolute paths
+    clean_data_dir = data_dir.replace('@', '')
+    dataset_path = os.path.join(clean_data_dir, dataset_name)
+    
+    # If the combined path doesn't exist, try treating dataset_name as absolute or relative to current dir
+    if not os.path.exists(dataset_path):
+        if os.path.exists(dataset_name):
+            dataset_path = dataset_name
+        elif os.path.exists(os.path.join(os.getcwd(), dataset_name)):
+            dataset_path = os.path.join(os.getcwd(), dataset_name)
+
     train_path = os.path.join(dataset_path, 'train')
     test_path = os.path.join(dataset_path, 'test')
 
